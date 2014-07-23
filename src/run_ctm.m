@@ -38,9 +38,6 @@ disp('Scenario initialized');
 for i = 1:num_steps
   fprintf('%d out of 17280...\n', i);
   
-  % make 1 CTM step
-  scenario.advanceNSeconds(sim_dt);
-
   % wait until point-queue state file is generated
   while exist(pointq_state_file) ~= 2 % 2 means file
     ;
@@ -56,13 +53,18 @@ for i = 1:num_steps
   capacity = offramp_capacity * (pq_data(1, 2) < queue_threshold);
   scenario.set_capacity_for_link_si(offramp_id, 3600, capacity);
 
+  % make 1 CTM step
+  scenario.advanceNSeconds(sim_dt);
+
   % extract CTM data
+  onramp = scenario.getLinkWithId(onramp_id);
   onramp_outflow = onramp.getTotalOutflowInVeh(0) / sim_dt;
   offramp = scenario.getLinkWithId(offramp_id);
   offramp_outflow = offramp.getTotalOutflowInVeh(0) / sim_dt;
 
   % write CTM state
-  dlmwrite(ctm_state_file, [(i*sim_dt) (0.1*offramp_outflow) (onramp_outflow)], '\t');
+  fprintf('%d\t%f\t%f\n', (i*sim_dt), (0.1*offramp_outflow), (onramp_outflow));
+  dlmwrite(ctm_state_file, [(i*sim_dt) (0.1*(offramp_outflow+0.0000001)) (onramp_outflow)], '\t');
 end
 
 
