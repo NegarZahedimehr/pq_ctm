@@ -16,9 +16,9 @@ offramp_capacity = 1800;  % vph
 sim_dt = 5;
 out_dt = 300;
 num_steps = 17280;
+num_steps = 239;
 start_time = 0;
 end_time = sim_dt * num_steps;;
-end_time = sim_dt * 239;
 
 queue_threshold = 10;
 
@@ -40,8 +40,7 @@ end
 disp('Scenario initialized');
 
 
-%for i = 1:num_steps
-for i = 1:239
+for i = 1:num_steps
   fprintf('%d out of 17280...\n', i);
   
   % wait until point-queue state file is generated
