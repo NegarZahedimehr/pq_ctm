@@ -3,6 +3,7 @@ clear all;
 root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 cfg_folder = fullfile(root, 'pq_ctm', 'networks');
 shared_folder = fullfile(root, 'pq_ctm', 'shared');
+out_prefix = fullfile(root, 'pq_ctm', 'beats_output/gp');
 beats_path = fullfile(root, 'beats');
 pointq_state_file = fullfile(shared_folder, 'pointq_state.tsv');
 ctm_state_file = fullfile(shared_folder, 'ctm_state.tsv');
@@ -13,9 +14,11 @@ offramp_id = 45;
 offramp_capacity = 1800;  % vph
 
 sim_dt = 5;
+out_dt = 300;
 num_steps = 17280;
 start_time = 0;
 end_time = sim_dt * num_steps;;
+end_time = sim_dt * 239;
 
 queue_threshold = 10;
 
@@ -27,7 +30,9 @@ scenario = edu.berkeley.path.beats.simulator.ObjectFactory.createAndLoadScenario
 
 try
   %scenario.initialize(sim_dt, start_time, end_time, numParticles);
-  scenario.initialize(sim_dt, start_time, end_time, 1);
+  %scenario.initialize(sim_dt, start_time, end_time, 1);
+  scenario.initialize(sim_dt, start_time, end_time, out_dt, 'text', out_prefix, 1, 1);
+  outputwriter = scenario.initOutputWriter();
 catch javaerror
   error(['Error in initializing the BeATS scenario: ', javaerror.message]);
 end
@@ -35,7 +40,8 @@ end
 disp('Scenario initialized');
 
 
-for i = 1:num_steps
+%for i = 1:num_steps
+for i = 1:239
   fprintf('%d out of 17280...\n', i);
   
   % wait until point-queue state file is generated
@@ -54,7 +60,7 @@ for i = 1:num_steps
   scenario.set_capacity_for_link_si(offramp_id, 3600, capacity);
 
   % make 1 CTM step
-  scenario.advanceNSeconds(sim_dt);
+  scenario.advanceNSeconds(sim_dt, outputwriter);
 
   % extract CTM data
   onramp = scenario.getLinkWithId(onramp_id);
@@ -67,6 +73,6 @@ for i = 1:num_steps
   dlmwrite(ctm_state_file, [(i*sim_dt) (0.1*(offramp_outflow+0.0000001)) (onramp_outflow)], '\t');
 end
 
-
+outputwriter.close();
 
 
