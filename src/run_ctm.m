@@ -8,17 +8,25 @@ beats_path = fullfile(root, 'beats');
 pointq_state_file = fullfile(shared_folder, 'pointq_state.tsv');
 ctm_state_file = fullfile(shared_folder, 'ctm_state.tsv');
 
-xml_file = fullfile(cfg_folder, 'scenario_1.xml');
+xml_file = fullfile(cfg_folder, '210W_16to24_v5.xml');
+xlsx_file = fullfile(cfg_folder, 'I210WB_Data.xlsx');
 onramp_id = 64;
 offramp_id = 45;
 offramp_capacity = 1800;  % vph
 
+range = [2 128];
+pm_dir = -1;
+
 sim_dt = 5;
 out_dt = 300;
 num_steps = 17280;
-num_steps = 239;
+%num_steps = 239;
 start_time = 0;
-end_time = sim_dt * num_steps;;
+end_time = sim_dt * num_steps;
+warmup_steps = (3600/sim_dt)*16;
+%warmup_steps = num_steps;
+max_sim_steps = (3600/sim_dt)*20;
+%max_sim_steps = num_steps;
 
 queue_threshold = 10;
 
@@ -38,10 +46,15 @@ catch javaerror
 end
 
 disp('Scenario initialized');
+% Warm-up period
+for i = 1:warmup_steps
+  fprintf('%d out of %d... [Warmup]\n', i, num_steps);
+  % make 1 CTM step
+  scenario.advanceNSeconds(sim_dt, outputwriter);
+end
 
-
-for i = 1:num_steps
-  fprintf('%d out of 17280...\n', i);
+for i = (warmup_steps+1):max_sim_steps
+  fprintf('%d out of %d... [Simulation]\n', i, num_steps);
   
   % wait until point-queue state file is generated
   while exist(pointq_state_file) ~= 2 % 2 means file
@@ -68,10 +81,32 @@ for i = 1:num_steps
   offramp_outflow = offramp.getTotalOutflowInVeh(0) / sim_dt;
 
   % write CTM state
-  fprintf('%d\t%f\t%f\n', (i*sim_dt), (0.1*offramp_outflow), (onramp_outflow));
-  dlmwrite(ctm_state_file, [(i*sim_dt) (0.1*(offramp_outflow+0.0000001)) (onramp_outflow)], '\t');
+  %fprintf('%d\t%f\t%f\n', (i*sim_dt), (0.1*offramp_outflow), (onramp_outflow));
+  dlmwrite(ctm_state_file, [(i*sim_dt) (offramp_outflow+0.0000001) (0.1*onramp_outflow)], '\t');
+end
+
+% Cool-off period
+for i = (max_sim_steps+1):num_steps
+  fprintf('%d out of %d... [Cool-off]\n', i, num_steps);
+  % make 1 CTM step
+  scenario.advanceNSeconds(sim_dt, outputwriter);
 end
 
 outputwriter.close();
 
 
+%fprintf('Loading scenario %s...\n', xml_file);
+ptr = BeatsSimulation;
+ptr.load_scenario(xml_file);
+
+%fprintf('Loading simulation data...\n');
+ptr.load_simulation_output(out_prefix);
+
+fprintf('Processing simulation results...\n');
+[GP_V, GP_F, GP_D, HOV_V, HOV_F, HOV_D, ORD, ORF, FRD, FRF, ORQ] = extract_simulation_data(ptr,xlsx_file,range);
+
+fprintf('Plotting simulation results...\n');
+plot_simulation_data;
+
+fprintf('Computing performnce measures...\n');
+performance_measures;
