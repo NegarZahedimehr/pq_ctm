@@ -61,6 +61,11 @@ for i = (warmup_steps+1):max_sim_steps
     ;
   end
 
+  s = dir(pointq_state_file);
+  while s.bytes == 0
+    s = dir(pointq_state_file);
+  end
+
   % read point-q state and delete the point-q state file
   pq_data = dlmread(pointq_state_file, '\t');
   delete(pointq_state_file);
