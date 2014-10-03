@@ -134,6 +134,7 @@ for i = 1:m
   idx = find(link_id == fr_id(has_fr(i)));
   %inflow = ptr.inflow_veh{1}(:, idx) + ptr.inflow_veh{2}(:, idx);
   inflow = ptr.inflow_veh{1}(:, idx);
+  inflow = ptr.outflow_veh{1}(:, idx); %FIXME
   inflow = 12*inflow';
   FRF(has_fr(i), :) = round(inflow);
 end

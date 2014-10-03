@@ -28,7 +28,7 @@ warmup_steps = (3600/sim_dt)*16;
 max_sim_steps = (3600/sim_dt)*20;
 %max_sim_steps = num_steps;
 
-queue_threshold = 10;
+queue_threshold = 20;
 
 
 import_beats_classes(beats_path);
@@ -74,6 +74,8 @@ for i = (warmup_steps+1):max_sim_steps
   onramp = scenario.getLinkWithId(onramp_id);
   onramp.set_density_in_veh(0, pq_data(1, 3));
   capacity = offramp_capacity * (pq_data(1, 2) < queue_threshold);
+  qs(i - warmup_steps) = pq_data(1, 2);
+  tt(i - warmup_steps) = pq_data(1, 1);
   scenario.set_capacity_for_link_si(offramp_id, 3600, capacity);
 
   % make 1 CTM step
@@ -85,9 +87,10 @@ for i = (warmup_steps+1):max_sim_steps
   offramp = scenario.getLinkWithId(offramp_id);
   offramp_outflow = offramp.getTotalOutflowInVeh(0) / sim_dt;
 
+  frf(i - warmup_steps) = 3600*offramp_outflow;
   % write CTM state
   %fprintf('%d\t%f\t%f\n', (i*sim_dt), (0.1*offramp_outflow), (onramp_outflow));
-  dlmwrite(ctm_state_file, [(i*sim_dt) (offramp_outflow+0.0000001) (0.1*onramp_outflow)], '\t');
+  dlmwrite(ctm_state_file, [(i*sim_dt) (offramp_outflow) (0.1*onramp_outflow)], '\t');
 end
 
 % Cool-off period
@@ -106,6 +109,10 @@ ptr.load_scenario(xml_file);
 
 %fprintf('Loading simulation data...\n');
 ptr.load_simulation_output(out_prefix);
+
+if 0
+	return;
+end
 
 fprintf('Processing simulation results...\n');
 [GP_V, GP_F, GP_D, HOV_V, HOV_F, HOV_D, ORD, ORF, FRD, FRF, ORQ] = extract_simulation_data(ptr,xlsx_file,range);
