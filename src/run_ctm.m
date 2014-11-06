@@ -29,6 +29,7 @@ max_sim_steps = (3600/sim_dt)*20;
 %max_sim_steps = num_steps;
 
 queue_threshold = 20;
+demand_class_ratio = 0.333; % between 0 and 1: portion of background demand
 
 
 import_beats_classes(beats_path);
@@ -89,8 +90,7 @@ for i = (warmup_steps+1):max_sim_steps
 
   frf(i - warmup_steps) = 3600*offramp_outflow;
   % write CTM state
-  %fprintf('%d\t%f\t%f\n', (i*sim_dt), (0.1*offramp_outflow), (onramp_outflow));
-  dlmwrite(ctm_state_file, [(i*sim_dt) (offramp_outflow) (0.1*onramp_outflow)], '\t');
+  dlmwrite(ctm_state_file, [(i*sim_dt) (demand_class_ratio*offramp_outflow) ((1-demand_class_ratio)*offramp_outflow) (0.1*onramp_outflow)], '\t');
 end
 
 % Cool-off period
