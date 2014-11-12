@@ -12,7 +12,7 @@ xml_file = fullfile(cfg_folder, '210W_16to24_v5.xml');
 xlsx_file = fullfile(cfg_folder, 'I210WB_Data.xlsx');
 onramp_id = 64;
 offramp_id = 45;
-offramp_capacity = 1800;  % vph
+offramp_capacity = 0.5; %1800;  % vph
 
 range = [2 128];
 pm_dir = -1;
@@ -28,8 +28,9 @@ warmup_steps = (3600/sim_dt)*16;
 max_sim_steps = (3600/sim_dt)*20;
 %max_sim_steps = num_steps;
 
-queue_threshold = 20;
+queue_threshold = 80;
 demand_class_ratio = 0.333; % between 0 and 1: portion of background demand
+demand_class_ratio = 0.5;
 
 
 import_beats_classes(beats_path);
